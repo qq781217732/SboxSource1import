@@ -1,12 +1,14 @@
 # SboxSource1import v1.0.0
 
-**Source 1 `.qc` → s&box `.vmdl` ModelDoc 专用转换工具。**
+**Source 1 `.qc` → s&box `.vmdl` ModelDoc converter.**
 
-将 Source 1 引擎的 QC 模型文件完整转换为 s&box 的 ModelDoc VMDL 格式，
-保留 bodygroup、LOD 层级、动画事件、骨骼、碰撞体、材质映射。
-同时支持 VTF→TGA 贴图、VMT→VMAT 材质、WAV→.sound 音效的一站式导入。
+Fully translates Source 1 QC model files into s&box ModelDoc VMDL format —
+preserving bodygroups, LOD levels, animation events, skeleton, collision meshes,
+and material mappings. Also supports VTF→TGA textures, VMT→VMAT materials,
+and WAV→.sound audio in one pass.
 
-GUI + CLI，Python。基于 [source1import](https://github.com/kristiker/source1import) + [source2utils](https://github.com/AlpyneDreams/source2utils)，针对 s&box ModelDoc 深度定制。
+GUI + CLI, Python. Forked from [source1import](https://github.com/kristiker/source1import) +
+[source2utils](https://github.com/AlpyneDreams/source2utils), customized for s&box ModelDoc.
 
 ---
 
@@ -23,7 +25,7 @@ GUI + CLI，Python。基于 [source1import](https://github.com/kristiker/source1
 ### 1. Launch the tool
 
 ```
-双击 source1import.pyw
+Double-click source1import.pyw
 ```
 
 You'll see the GUI window titled **"SboxSource1import v1.0.0"**.
