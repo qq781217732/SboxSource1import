@@ -197,6 +197,13 @@ class ModelDoc:
         morph_weights: list["unknown"] = field(default_factory=list)
 
     @dataclass
+    class PoseParam(_Node):
+        poseparam_min: float = 0.0
+        poseparam_max: float = 1.0
+        poseparam_looping: bool = False
+        poseparam_loop: float = 0.0
+
+    @dataclass
     class DefaultMaterialGroup(_Node):
         remaps: list[dict[Literal["from"] | Literal["to"], resourcepath]] = field(default_factory=list)
         use_global_default: bool = False
@@ -257,6 +264,9 @@ class ModelDoc:
     
     @containerof(WeightList)
     class WeightListList(_BaseNode): pass
+
+    @containerof(PoseParam)
+    class PoseParamList(_BaseNode): pass
 
     @containerof(DefaultMaterialGroup, MaterialGroup)
     class MaterialGroupList(_BaseNode): pass

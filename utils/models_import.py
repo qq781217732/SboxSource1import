@@ -254,6 +254,14 @@ def ImportQCtoVMDL(qc_path: Path):
         elif isinstance(command, QC.poseparameter):
             pose_parameter_defs[command.name] = command
             _log(f"  [poseparam] '{command.name}': range=[{command.min}, {command.max}], wrap={command.wrap}")
+            p = ModelDoc.PoseParam(
+                name=command.name,
+                poseparam_min=command.min,
+                poseparam_max=command.max,
+                poseparam_looping=command.wrap > 0,
+                poseparam_loop=command.wrap if command.wrap > 0 else 0.0,
+            )
+            vmdl.add_to_appropriate_list(p)
 
     # These first
     for command in qc_commands:
