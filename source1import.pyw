@@ -29,7 +29,7 @@ bg1 = "#363636"
 bg2 = "#262627"
 fg1 = "#b6b6b7"
 
-APP_VER = "0.3.11"
+APP_VER = "1.0.0"
 
 class ScriptError(Exception):...
 
@@ -112,7 +112,7 @@ class SampleApp(Tk):
 
         global bg1, bg2, fg1
 
-        self.APP_TITLE = f"Source 1 Asset Importer v{APP_VER}"
+        self.APP_TITLE = f"SboxSource1import v{APP_VER}"
 
         self.is_running = False
         self.allChecked = IntVar()
@@ -133,9 +133,10 @@ class SampleApp(Tk):
         self.Scenes = IntVar(name='scenes')
         self.Scripts = IntVar(name='scripts')
         self.Sessions = IntVar(name='sessions')
+        self.Sounds = IntVar(name='sounds')
 
         self.vars = (self.in_path, self.out_path, self.filter, self.Textures,
-            self.Materials, self.Models,self.Particles,self.Scenes,self.Scripts,self.Sessions,
+            self.Materials, self.Models,self.Particles,self.Scenes,self.Scripts,self.Sessions,self.Sounds,
         )
         self.settings_file = Path.home() / "AppData/Roaming/source1import/settings.json"
         self.settings_file.parent.MakeDir()
@@ -282,6 +283,9 @@ class SampleApp(Tk):
         add_tab("scenes", self.Scenes, "Generate vcdlist from vcds", "scenes_import").add_toggles(
             ("EVERYTHING_TO_ROOT", "Add everything to _root.vcdlist"),
         )
+        add_tab("sounds", self.Sounds, "Import Sound files", "sound_import").add_overwrite_toggles(
+            ("OVERWRITE", "Overwrite Existing Sounds"),
+        )
         self.tab_notebook.grid(in_=self.module_picking_grid, column=1, row=0, rowspan=len(self.tabs), columnspan=2)#.pack(expand=1, fill="both")
 
         self.widgets[19]=Text(self, wrap=NONE, bd=1, relief=SUNKEN, height=7) #, textvariable=self.status
@@ -406,7 +410,7 @@ class SampleApp(Tk):
         def stop():
             self.is_running = False
             self.gobutton_update()
-        if not any(method.get() for method in (self.Textures,self.Materials,self.Models,self.Particles,self.Maps,self.Scenes,self.Scripts,self.Sessions)):
+        if not any(method.get() for method in (self.Textures,self.Materials,self.Models,self.Particles,self.Maps,self.Scenes,self.Scripts,self.Sessions,self.Sounds)):
             messagebox.showinfo(title=self.APP_TITLE, message="No import function was selected")
             return stop()
         for tab in self.tabs.values():

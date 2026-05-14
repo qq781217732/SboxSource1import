@@ -31,7 +31,7 @@ IMPORT_MDL = True
 
 # qc import
 IMPORT_QC = False
-IGNORE_SINGLEBODY_BODYGROUPS = True
+IGNORE_SINGLEBODY_BODYGROUPS = False
 IGNORE_BBOX = False
 
 SHOULD_OVERWRITE = False
@@ -152,6 +152,22 @@ AE_IDS = {
     3014: 'EVENT_WEAPON_PISTOL_FIRE',
 }
 
+# TODO: Load HL2/VJBase sound tables (game_sounds_*.txt or sounds.lua).
+# When an animation event references a Source 1 logical sound name
+# (e.g. "Zombie.Pain"), resolve it to an actual WAV path and update
+# the AE_CL_PLAYSOUND event_keys["name"] so that the s&box editor
+# can preview the correct sound.
+# Approach:
+#   1. Parse HL2's scripts/game_sounds_*.txt  →  "Zombie.Pain"  →  "npc/zombie/zombie_pain1.wav"
+#   2. Parse VJBase's lua/vj_base/resources/sounds.lua  →  "VJ.Impact.Flesh"  →  "vj_base/impact/flesh.wav"
+#   3. During QC import, in the event-processing block, call resolve_sound_name()
+#      to replace logical names with actual paths before writing the .vmdl.
+#   4. Fallback: if unresolved, keep the original name (runtime C# will handle via OnAnimEvent).
+_SOUND_MAP: dict[str, str] = {}
+# Example entries (to be populated by parser):
+# _SOUND_MAP["Zombie.Pain"] = "npc/zombie/zombie_pain1.wav"
+# _SOUND_MAP["Zombie.Alert"] = "npc/zombie/zombie_alert1.wav"
+
 
 def ImportQCtoVMDL(qc_path: Path):
     vmdl = ModelDocVMDL()
@@ -205,7 +221,32 @@ def ImportQCtoVMDL(qc_path: Path):
         body.name = name
         body.mesh_filename = reference_mesh_file
         return add_rendermesh_from_body(body)
-        
+
+    def resolve_mesh_name(smd_filename: str) -> str | None:
+        """Given an SMD filename (e.g. 'zombie_classic_Zombie_reference.smd'),
+        return the RenderMeshFile name (e.g. 'studio'), or None if not found."""
+        smd_basename = Path(smd_filename).name
+        smd_stem = Path(smd_filename).stem
+        rml = vmdl.base_lists.get(ModelDoc.RenderMeshList)
+        if rml is None:
+            return None
+        for mesh in rml.children:
+            mesh_file_basename = Path(mesh.filename).name
+            if mesh_file_basename.lower() == smd_basename.lower():
+                return mesh.name
+            if mesh.name.lower() == smd_stem.lower():
+                return mesh.name
+        return None
+
+    def ensure_lod_mesh(smd_filename: str) -> str:
+        """Ensure a RenderMeshFile exists for a LOD SMD file. Returns the mesh name."""
+        existing = resolve_mesh_name(smd_filename)
+        if existing is not None:
+            return existing
+        stem = Path(smd_filename).stem
+        add_rendermesh(stem, smd_filename)
+        return stem
+
     def add_rendermesh_from_body(body: QC.body):
         rendermesh_file = sh.EXPORT_CONTENT / fixup_filepath(body.mesh_filename)
         if rendermesh_file.is_file():
@@ -448,7 +489,9 @@ def ImportQCtoVMDL(qc_path: Path):
                             note=" ".join(option[3:]),
                         )
                         if event_class in ('AE_CL_PLAYSOUND', 'AE_SV_PLAYSOUND', 'AE_CL_STOPSOUND'):
-                            animevent.event_keys["name"] = option[3]
+                            sound_name = option[3]
+                            # TODO: resolve Source 1 logical sound names via _SOUND_MAP
+                            animevent.event_keys["name"] = _SOUND_MAP.get(sound_name, sound_name)
                         blend1d.children.append(animevent)
                         continue
 
@@ -515,7 +558,9 @@ def ImportQCtoVMDL(qc_path: Path):
                             note=" ".join(option[3:]),
                         )
                         if event_class in ('AE_CL_PLAYSOUND', 'AE_SV_PLAYSOUND', 'AE_CL_STOPSOUND'):
-                            animevent.event_keys["name"] = option[3]
+                            sound_name = option[3]
+                            # TODO: resolve Source 1 logical sound names via _SOUND_MAP
+                            animevent.event_keys["name"] = _SOUND_MAP.get(sound_name, sound_name)
                         elif event_class == 'whatever':
                             ...
 
@@ -732,20 +777,30 @@ def ImportQCtoVMDL(qc_path: Path):
             # first LOD!
             if ModelDoc.LODGroupList not in vmdl.base_lists:
                 lod0 = ModelDoc.LODGroup()
-                ... # Form it based on the $body stuff
+                # Populate LOD0 with ALL existing RenderMeshFile names
+                rml = vmdl.base_lists.get(ModelDoc.RenderMeshList)
+                if rml is not None:
+                    for mesh in rml.children:
+                        if mesh.name not in lod0.meshes:
+                            lod0.meshes.append(mesh.name)
                 vmdl.add_to_appropriate_list(lod0)
-            
+
             # add stuff to lod0 that lodn is supposed to replace
             for lod0_mesh in replacemodel.keys():
-                if lod0_mesh in lod0.meshes:
+                resolved = resolve_mesh_name(lod0_mesh)
+                if resolved is None:
+                    resolved = ensure_lod_mesh(lod0_mesh)
+                if resolved in lod0.meshes:
                     continue
-                lod0.meshes.append(lod0_mesh)
+                lod0.meshes.append(resolved)
 
             lod_n = ModelDoc.LODGroup(switch_threshold=command.threshold)
             for lod_n_mesh in replacemodel.values():
                 if lod_n_mesh is None:
                     continue
-                lod_n.meshes.append(lod_n_mesh)
+                resolved = ensure_lod_mesh(lod_n_mesh)
+                if resolved not in lod_n.meshes:
+                    lod_n.meshes.append(resolved)
             
             vmdl.add_to_appropriate_list(lod_n)
 
@@ -845,6 +900,9 @@ def ImportQCtoVMDL(qc_path: Path):
                     prop_data.game_keys.update(value)
                     vmdl.add_to_appropriate_list(prop_data)
 
+    # --- Post-process: assign LOD meshes to bodygroups ---
+    _assign_lod_meshes_to_bodygroups(vmdl)
+
     bIsIncludeFile = False
     if qc_path.suffix == ".qci":
         bIsIncludeFile = True
@@ -883,6 +941,50 @@ def ImportQCtoVMDL(qc_path: Path):
     print('+ Saved', out_vmdl_path.local)
 
 
+
+def _assign_lod_meshes_to_bodygroups(vmdl):
+    """Assign LOD variant meshes to the same bodygroup choice as their base mesh.
+    
+    Uses SMD filename matching: if base mesh is in bodygroup X,
+    LOD variants get added to bodygroup X as well.
+    """
+    import re
+    rml = vmdl.base_lists.get(ModelDoc.RenderMeshList)
+    bgl = vmdl.base_lists.get(ModelDoc.BodyGroupList)
+    if rml is None or bgl is None:
+        return
+
+    # Build mapping: smd_stem_lower -> (bodygroup, choice_index, choice)
+    stem_to_choice = {}
+    for bg in bgl.children:
+        for ci, choice in enumerate(bg.children):
+            for mn in choice.meshes:
+                for m in rml.children:
+                    if m.name == mn:
+                        stem = Path(m.filename).stem.lower()
+                        stem_to_choice[stem] = (bg, ci, choice)
+                        break
+
+    if not stem_to_choice:
+        return
+
+    # Find LOD meshes and assign them to their base mesh bodygroup
+    lod_pattern = re.compile(r'^(.+)_lod[0-9]+$')
+    assigned = 0
+    for m in rml.children:
+        stem = Path(m.filename).stem.lower()
+        match = lod_pattern.match(stem)
+        if not match:
+            continue
+        base_stem = match.group(1)
+        if base_stem in stem_to_choice:
+            bg, ci, choice = stem_to_choice[base_stem]
+            if m.name not in choice.meshes:
+                choice.meshes.append(m.name)
+                assigned += 1
+
+    if assigned:
+        print(f'  [bodygroup] Assigned {assigned} LOD meshes to bodygroups')
 from dataclasses import asdict
 class ModelDocVMDL(KV3File):
     def __init__(self):

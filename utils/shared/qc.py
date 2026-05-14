@@ -8,11 +8,11 @@ qcgrammar = Grammar(
     qcfile = _? ((cmd / token_base / group_base) _*)*
 
     # to distinguish top level from other stuff
-    cmd = ~"\\$[_$a-zA-Z][\w$/.]*"
+    cmd = ~r"\$[_$a-zA-Z][\w$/.]*"
     token_base = token ""
     group_base = group ""
 
-    group = "{" _* ((_2complex4grammar / token / group) _*)* ("}" / ~"\Z")
+    group = "{" _* ((_2complex4grammar / token / group) _*)* ("}" / ~r"\Z")
 
     token = (variable / quoted / number)
 
@@ -41,7 +41,7 @@ qcgrammar = Grammar(
     __ = ~r"\s+" / comment / multiline_comment
     comment = ~"//[^\\r\\n]*"
     # This is dumber than the usual stuff, eating everything till it finds */ or EOF
-    multiline_comment = ~"\\/\\*(.*?|\\s)*(\\*\\/|\\Z)"
+    multiline_comment = ~r"\/\*(.*?|\s)*(\*\/|\Z)"
     #multiline_comment = ~"/\\*[^*]*\\*+(?:[^/*][^*]*\\*+)*/"
 
     """

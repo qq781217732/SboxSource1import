@@ -428,7 +428,7 @@ def OutName_Sky(path: Path) -> Path:
 def fixVmtTextureDir(localPath, fileExt = TEXTURE_FILEEXT) -> str:
     if localPath == "" or not isinstance(localPath, str):
         return ""
-    return (materials / localPath.lstrip('\\/')).with_suffix(fileExt).as_posix()
+    return (materials / localPath.lstrip('/\\')).with_suffix(fileExt).as_posix()
 
 def formatNewTexturePath(vmtPath: str, textureType: str) -> str:
     texturePath = sh.output(fixVmtTextureDir(vmtPath))
