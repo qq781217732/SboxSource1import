@@ -14,9 +14,14 @@ GUI + CLI, Python. Forked from [source1import](https://github.com/kristiker/sour
 
 ## Quick Start
 
-1. [Download](https://github.com/kristiker/source1import/releases)
-2. `pip install -r requirements.txt`
-3. Double-click `source1import.pyw` to launch the GUI
+```bash
+git clone https://github.com/qq781217732/SboxSource1import.git
+cd SboxSource1import
+pip install -r requirements.txt
+python source1import.pyw
+```
+
+Or download the ZIP from the [GitHub repo](https://github.com/qq781217732/SboxSource1import) and extract.
 
 ---
 
