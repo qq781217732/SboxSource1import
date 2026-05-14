@@ -74,12 +74,12 @@ This is the most important tab for VJBase. Click the **Models** tab and set:
 ☑ Generate VMDL models
   ☑ Overwrite Existing VMDLs
   ☐ Generate from MDL files          ← UNCHECK
-  ☐ Search for files in Source 1 dir
-  ☐ Temporary s&box path fix
+  ☑ Search for files in Source 1 dir
+  ☑ Temporary s&box path fix
   ☑ Import from QC (experimental)    ← CHECK THIS
 ```
 
-> **Important**: Uncheck **"Generate from MDL files"** and check **"Import from QC (experimental)"**. This tells the tool to read `.qc` files and generate full ModelDoc VMDLs (with animations, bodygroups, LODs, attachments) instead of simple MDL wrappers.
+> **Important**: Only uncheck **"Generate from MDL files"** — everything else should be checked for s&box export. The `COPY_FROM_SRC1_DIR` flag copies `.qc`/`.smd` model sources from the Source 1 directory. `SAMPBOX` enables the s&box path fix (appending `../`). `IMPORT_QC` tells the tool to generate full ModelDoc VMDLs (with animations, bodygroups, LODs, attachments) instead of simple MDL wrappers.
 
 ### 6. Configure Other Tabs
 
