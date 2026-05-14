@@ -1,0 +1,139 @@
+
+D:\Games\steamapps\common\Half-Life Alyx\game\bin\win64>resourcecompiler.exe -game hlvr -r -i "D:\Games\steamapps\common\Half-Life Alyx\content\csgo_imported\materials\*"
+----
+pano - import svg to vsvg, vtf to vtex, etc
+----
+modeldoc import from old vmdl? cs_mdl_import?
+----
+vr_projected_decals is close to generic with glossiness and stuff, also sheets
+
+g_flGlossiness "0.000" is inverse of roughness (=255)
+
+this looks like a s1 imported mat
+its used as a default *material* (s2 particle renderers use compiled textures usually)
+for render_blob particle renderer (portal2)
+D:\Games\steamapps\common\Half-Life Alyx\content\core\materials\dev\roomwalls_white.vmat
+
+inverted roughness
+materials/models/props_lab/monitor02.vmat
+
+[ W VmtToVmat ]: GetMappingDimensionsForVMT: can't open "materials/WALL_PAPER/HR_WP/HR_WALL_PAPER_D.vmt"
+
+---
+
+    sine
+    {
+            resultvar       "$color[0]"
+            sineperiod      "0.2"
+            sinemin "0.99"
+            sinemax "1"
+    }
+    sine
+    {
+            resultvar       "$color[1]"
+            sineperiod      "0.1"
+            sinemin "0.98"
+            sinemax "1"
+    }
+    sine
+    {
+            resultvar       "$color[2]"
+            sineperiod      "0.1"
+            sinemin "0.99"
+            sinemax "1"
+    }
+    texturescroll
+    {
+            texturescrollvar        "$texture2transform"
+            texturescrollrate       "1"
+            texturescrollangle      "-90"
+    }
+-----
+    animatedtexture
+    {
+            animatedtexturevar      "$normalmap"
+            animatedtextureframenumvar      "$bumpframe"
+            animatedtextureframerate        "30.0"
+    }
+    texturescroll
+    {
+            texturescrollvar        "$bumptransform"
+            texturescrollrate       "0.05"
+            texturescrollangle      "45.0"
+    }
+    waterlod
+    {
+    }
+
+-----
+music
+
+    linearramp
+    {
+            rate    "0.08"
+            initialvalue    "0"
+            resultvar       "$x1"
+    }
+    frac
+    {
+            srcvar1 "$x1"
+            resultvar       "$x2"
+    }
+    lessorequal
+    {
+            srcvar1 "$x2"
+            srcvar2 "$offset2"
+            lessequalvar    "$offset1"
+            greatervar      "$offset2"
+            resultvar       "$offset_temp"
+    }
+    lessorequal
+    {
+            srcvar1 "$x2"
+            srcvar2 "$offset3"
+            lessequalvar    "$offset_temp"
+            greatervar      "$offset3"
+            resultvar       "$offset"
+    }
+    multiply
+    {
+            srcvar1 "$x2"
+            srcvar2 "$div"
+            resultvar       "$x1"
+    }
+    frac
+    {
+            srcvar1 "$x1"
+            resultvar       "$x3"
+    }
+    subtract
+    {
+            srcvar1 "$x3"
+            srcvar2 "$half"
+            resultvar       "$x2"
+    }
+    lessorequal
+    {
+            srcvar1 "$x3"
+            srcvar2 "$half"
+            lessequalvar    "$zero"
+            greatervar      "$x2"
+            resultvar       "$x1"
+    }
+    multiply
+    {
+            srcvar1 "$x1"
+            srcvar2 "$rescale"
+            resultvar       "$x2"
+    }
+    add
+    {
+            srcvar1 "$x2"
+            srcvar2 "$offset"
+            resultvar       "$scrollpos[0]"
+    }
+    texturetransform
+    {
+            translatevar    "$scrollpos"
+            resultvar       "$basetexturetransform"
+    }
