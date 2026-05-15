@@ -899,7 +899,7 @@ def ImportQCtoVMDL(qc_path: Path):
                         return n.lower()
 
                     joint = ModelDoc.PhysicsJointConical(
-                        parent_body=_sbox_bone_name(parent_name) if parent_name else "pelvis",
+                        parent_body=_sbox_bone_name(parent_name) if parent_name else "bip01_pelvis",
                         child_body=_sbox_bone_name(bone_name),
                         anchor_origin=anchor_origin,
                         anchor_angles=anchor_angles,
@@ -961,10 +961,17 @@ def ImportQCtoVMDL(qc_path: Path):
 
         elif isinstance(command, QC.hbox):
             command: QC.hbox
-            bone_fixed = bone_name_fixup(command.bone)
+            # Convert to s&box bone naming (bip01_pelvis, not ValveBiped_Bip01_Pelvis)
+            def _sbox_bone_name(name: str) -> str:
+                n = name.replace('.', '_')
+                if n.startswith('ValveBiped_'):
+                    n = n[len('ValveBiped_'):]
+                return n.lower()
+
+            bone_sbox = _sbox_bone_name(command.bone)
             hitbox = ModelDoc.Hitbox(
-                name=bone_fixed,
-                parent_bone=bone_fixed,
+                name=bone_sbox,
+                parent_bone=bone_sbox,
                 hitbox_mins=[command.minx, command.miny, command.minz],
                 hitbox_maxs=[command.maxx, command.maxy, command.maxz],
             )
