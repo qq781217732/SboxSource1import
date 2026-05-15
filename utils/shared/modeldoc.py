@@ -282,6 +282,8 @@ class ModelDoc:
         anchor_origin: list[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
         anchor_angles: list[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
         collision_enabled: bool = False
+        linear_strength: float = 0.0
+        angular_strength: float = 0.0
         friction: float = 4.0
         enable_swing_limit: bool = True
         swing_limit: float = 30.0
@@ -290,12 +292,7 @@ class ModelDoc:
         min_twist_angle: float = -30.0
         max_twist_angle: float = 30.0
 
-    @dataclass
-    class PhysicsJointBody(_Node):
-        name: str = ""
-        children: list = field(default_factory=list)
-
-    @containerof(PhysicsJointBody, PhysicsJointConical)
+    @containerof(Folder)
     class PhysicsJointList(_BaseNode): pass
 
     # --- Hitbox nodes ---

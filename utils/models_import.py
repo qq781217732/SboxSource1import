@@ -858,10 +858,9 @@ def ImportQCtoVMDL(qc_path: Path):
 
             # --- Generate PhysicsJointList ---
             if joint_constraints:
-                joint_body = ModelDoc.PhysicsJointBody(name="PhysicsJointBody")
+                joint_folder = ModelDoc.Folder(name="PhysicsJointBody")
 
                 for bone_name, axes in joint_constraints.items():
-                    # Get parent bone from skeleton
                     bone_fixed = bone_name_fixup(bone_name)
                     bone_node = skeleton.find_by_name_dfs(bone_fixed)
                     parent_name = ""
@@ -871,7 +870,6 @@ def ImportQCtoVMDL(qc_path: Path):
                     if bone_node is not None:
                         anchor_origin = bone_node.origin if hasattr(bone_node, 'origin') else [0.0, 0.0, 0.0]
                         anchor_angles = bone_node.angles if hasattr(bone_node, 'angles') else [0.0, 0.0, 0.0]
-                        # Find parent bone: search the tree for a node whose child is bone_node
                         def _find_parent(tree, target):
                             for child in tree.children:
                                 if child is target or child.find_by_name_dfs(target.name):
@@ -884,11 +882,9 @@ def ImportQCtoVMDL(qc_path: Path):
                         if parent and hasattr(parent, 'name'):
                             parent_name = parent.name
 
-                    # Convert Source 1 per-axis limits to conical swing/twist
                     x = axes.get('x')
                     y = axes.get('y')
                     z = axes.get('z')
-
                     twist_min = x[0] if x else -30.0
                     twist_max = x[1] if x else 30.0
                     swing_y = max(abs(y[0]), abs(y[1])) if y else 30.0
@@ -896,7 +892,6 @@ def ImportQCtoVMDL(qc_path: Path):
                     swing_limit = max(swing_y, swing_z)
                     friction = x[2] if x else (y[2] if y else (z[2] if z else 4.0))
 
-                    # Convert to s&box bone naming (bip01_pelvis, not ValveBiped_Bip01_Pelvis)
                     def _sbox_bone_name(name: str) -> str:
                         n = bone_name_fixup(name)
                         if n.startswith('ValveBiped_'):
@@ -915,9 +910,14 @@ def ImportQCtoVMDL(qc_path: Path):
                         min_twist_angle=twist_min,
                         max_twist_angle=twist_max,
                     )
-                    joint_body.add_nodes(joint)
+                    joint_folder.add_nodes(joint)
 
-                vmdl.add_to_appropriate_list(joint_body)
+                # PhysicsJointList is a direct child of RootNode
+                joint_list = vmdl.base_lists.get(ModelDoc.PhysicsJointList)
+                if joint_list is None:
+                    joint_list = ModelDoc.PhysicsJointList()
+                    vmdl.root.add_nodes(joint_list)
+                joint_list.add_nodes(joint_folder)
 
         # https://developer.valvesoftware.com/wiki/$includemodel
         # grab $animation, $sequence, $attachment and $collisiontext from this model
