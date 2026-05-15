@@ -858,7 +858,6 @@ def ImportQCtoVMDL(qc_path: Path):
 
             # --- Generate PhysicsJointList ---
             if joint_constraints:
-                joint_list = ModelDoc.PhysicsJointList()
                 joint_body = ModelDoc.PhysicsJointBody(name="PhysicsJointBody")
 
                 for bone_name, axes in joint_constraints.items():
@@ -918,8 +917,7 @@ def ImportQCtoVMDL(qc_path: Path):
                     )
                     joint_body.add_nodes(joint)
 
-                joint_list.add_nodes(joint_body)
-                vmdl.add_to_appropriate_list(joint_list)
+                vmdl.add_to_appropriate_list(joint_body)
 
         # https://developer.valvesoftware.com/wiki/$includemodel
         # grab $animation, $sequence, $attachment and $collisiontext from this model
