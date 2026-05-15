@@ -286,6 +286,14 @@ def ImportQCtoVMDL(qc_path: Path):
 
     bone_name_fixup = lambda name: name.replace('.', '_')
 
+    # Convert Source 1 bone naming to s&box standard
+    # "ValveBiped.Bip01_Pelvis" → "bip01_pelvis"
+    def _sbox_bone_name(name: str) -> str:
+        n = name.replace('.', '_')
+        if n.startswith('ValveBiped_'):
+            n = n[len('ValveBiped_'):]
+        return n.lower()
+
     # --- first pass: collect $animation definitions ---
     animation_defs: dict[str, QC.animation] = {}
     pose_parameter_defs: dict[str, QC.poseparameter] = {}
@@ -809,7 +817,7 @@ def ImportQCtoVMDL(qc_path: Path):
             command: QC.attachment
             attachment = ModelDoc.Attachment(
                 name = command.name,
-                parent_bone = bone_name_fixup(command.parent_bone),
+                parent_bone = _sbox_bone_name(command.parent_bone),
                 relative_origin = [command.x, command.y, command.z],
                 # TODO: rotation
             )
@@ -892,12 +900,6 @@ def ImportQCtoVMDL(qc_path: Path):
                     swing_limit = max(swing_y, swing_z)
                     friction = x[2] if x else (y[2] if y else (z[2] if z else 4.0))
 
-                    def _sbox_bone_name(name: str) -> str:
-                        n = bone_name_fixup(name)
-                        if n.startswith('ValveBiped_'):
-                            n = n[len('ValveBiped_'):]
-                        return n.lower()
-
                     joint = ModelDoc.PhysicsJointConical(
                         parent_body=_sbox_bone_name(parent_name) if parent_name else "bip01_pelvis",
                         child_body=_sbox_bone_name(bone_name),
@@ -961,13 +963,6 @@ def ImportQCtoVMDL(qc_path: Path):
 
         elif isinstance(command, QC.hbox):
             command: QC.hbox
-            # Convert to s&box bone naming (bip01_pelvis, not ValveBiped_Bip01_Pelvis)
-            def _sbox_bone_name(name: str) -> str:
-                n = name.replace('.', '_')
-                if n.startswith('ValveBiped_'):
-                    n = n[len('ValveBiped_'):]
-                return n.lower()
-
             bone_sbox = _sbox_bone_name(command.bone)
             hitbox = ModelDoc.Hitbox(
                 name=bone_sbox,
