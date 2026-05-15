@@ -274,6 +274,30 @@ class ModelDoc:
     @containerof(PhysicsHullFile)
     class PhysicsShapeList(_BaseNode): pass
 
+    # --- Physics joint nodes ---
+    @dataclass
+    class PhysicsJointConical(_Node):
+        parent_body: str = ""
+        child_body: str = ""
+        anchor_origin: list[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
+        anchor_angles: list[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
+        collision_enabled: bool = False
+        friction: float = 4.0
+        enable_swing_limit: bool = True
+        swing_limit: float = 30.0
+        swing_offset_angle: list[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
+        enable_twist_limit: bool = True
+        min_twist_angle: float = -30.0
+        max_twist_angle: float = 30.0
+
+    @dataclass
+    class PhysicsJointBody(_Node):
+        name: str = ""
+        children: list = field(default_factory=list)
+
+    @containerof(PhysicsJointBody, PhysicsJointConical)
+    class PhysicsJointList(_BaseNode): pass
+
     # --- Hitbox nodes ---
     @dataclass
     class Hitbox(_Node):

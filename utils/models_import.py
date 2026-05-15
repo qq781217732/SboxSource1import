@@ -828,13 +828,99 @@ def ImportQCtoVMDL(qc_path: Path):
         # https://developer.valvesoftware.com/wiki/$collisionjoints
         elif isinstance(command, QC.collisionjoints):
             command: QC.collisionjoints
+
+            # --- Physics hull mesh ---
             physicsmeshfile = ModelDoc.PhysicsHullFile(
                 filename=fixup_filepath(command.mesh_filename),
                 surface_prop=global_surfaceprop
             )
-
             vmdl.add_to_appropriate_list(physicsmeshfile)
-        
+
+            # --- Parse ragdoll joint constraints ---
+            opts = list(command.options) if command.options else []
+            joint_constraints: dict[str, dict[str, tuple[float, float, float]]] = {}
+            # joint_constraints[bone_name][axis] = (min, max, friction)
+
+            i = 0
+            while i < len(opts):
+                token = str(opts[i]).lstrip('$')
+                if token == 'jointconstrain':
+                    bone = str(opts[i + 1])
+                    axis = str(opts[i + 2])  # x, y, z
+                    if str(opts[i + 3]).lower() == 'limit':
+                        minv = float(opts[i + 4])
+                        maxv = float(opts[i + 5])
+                        friction = float(opts[i + 6])
+                        joint_constraints.setdefault(bone, {})[axis] = (minv, maxv, friction)
+                        i += 7
+                        continue
+                i += 1
+
+            # --- Generate PhysicsJointList ---
+            if joint_constraints:
+                joint_list = ModelDoc.PhysicsJointList()
+                joint_body = ModelDoc.PhysicsJointBody(name="PhysicsJointBody")
+
+                for bone_name, axes in joint_constraints.items():
+                    # Get parent bone from skeleton
+                    bone_fixed = bone_name_fixup(bone_name)
+                    bone_node = skeleton.find_by_name_dfs(bone_fixed)
+                    parent_name = ""
+                    anchor_origin = [0.0, 0.0, 0.0]
+                    anchor_angles = [0.0, 0.0, 0.0]
+
+                    if bone_node is not None:
+                        anchor_origin = bone_node.origin if hasattr(bone_node, 'origin') else [0.0, 0.0, 0.0]
+                        anchor_angles = bone_node.angles if hasattr(bone_node, 'angles') else [0.0, 0.0, 0.0]
+                        # Find parent bone: search the tree for a node whose child is bone_node
+                        def _find_parent(tree, target):
+                            for child in tree.children:
+                                if child is target or child.find_by_name_dfs(target.name):
+                                    return tree
+                                result = _find_parent(child, target)
+                                if result:
+                                    return result
+                            return None
+                        parent = _find_parent(skeleton, bone_node)
+                        if parent and hasattr(parent, 'name'):
+                            parent_name = parent.name
+
+                    # Convert Source 1 per-axis limits to conical swing/twist
+                    x = axes.get('x')
+                    y = axes.get('y')
+                    z = axes.get('z')
+
+                    twist_min = x[0] if x else -30.0
+                    twist_max = x[1] if x else 30.0
+                    swing_y = max(abs(y[0]), abs(y[1])) if y else 30.0
+                    swing_z = max(abs(z[0]), abs(z[1])) if z else 30.0
+                    swing_limit = max(swing_y, swing_z)
+                    friction = x[2] if x else (y[2] if y else (z[2] if z else 4.0))
+
+                    # Convert to s&box bone naming (bip01_pelvis, not ValveBiped_Bip01_Pelvis)
+                    def _sbox_bone_name(name: str) -> str:
+                        n = bone_name_fixup(name)
+                        if n.startswith('ValveBiped_'):
+                            n = n[len('ValveBiped_'):]
+                        return n.lower()
+
+                    joint = ModelDoc.PhysicsJointConical(
+                        parent_body=_sbox_bone_name(parent_name) if parent_name else "pelvis",
+                        child_body=_sbox_bone_name(bone_name),
+                        anchor_origin=anchor_origin,
+                        anchor_angles=anchor_angles,
+                        friction=friction,
+                        enable_swing_limit=True,
+                        swing_limit=swing_limit,
+                        enable_twist_limit=True,
+                        min_twist_angle=twist_min,
+                        max_twist_angle=twist_max,
+                    )
+                    joint_body.add_nodes(joint)
+
+                joint_list.add_nodes(joint_body)
+                vmdl.add_to_appropriate_list(joint_list)
+
         # https://developer.valvesoftware.com/wiki/$includemodel
         # grab $animation, $sequence, $attachment and $collisiontext from this model
         elif isinstance(command, QC.includemodel):

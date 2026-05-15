@@ -189,7 +189,7 @@ class QC:
 
     class collisionjoints:
         mesh_filename: str
-        #options: _options
+        options: Group[Token]
 
     # https://developer.valvesoftware.com/wiki/$hboxset / $hbox
     class hboxset:
