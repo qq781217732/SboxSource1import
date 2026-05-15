@@ -284,15 +284,7 @@ def ImportQCtoVMDL(qc_path: Path):
     skeleton = ModelDoc.Skeleton()
     bHasDefaultWeightlist = False
 
-    def bone_name_fixup(name: str) -> str:
-        """Convert Source 1 bone name to s&box standard naming.
-        'ValveBiped.Bip01_Pelvis' → 'bip01_pelvis'
-        'ValveBiped.HC_Body_Bone' → 'hc_body_bone'
-        """
-        fixed = name.replace('.', '_')
-        if fixed.startswith('ValveBiped_'):
-            fixed = fixed[len('ValveBiped_'):]
-        return fixed.lower()
+    bone_name_fixup = lambda name: name.replace('.', '_')
 
     # --- first pass: collect $animation definitions ---
     animation_defs: dict[str, QC.animation] = {}
@@ -931,14 +923,6 @@ def ImportQCtoVMDL(qc_path: Path):
     # --- Post-process: assign LOD meshes to bodygroups ---
     _assign_lod_meshes_to_bodygroups(vmdl)
 
-    # --- Post-process: set default root bone for motion extraction ---
-    # s&box compiler auto-creates ExtractMotion with "pelvis" if this is empty.
-    # Set it to the actual root bone name so runtime motion extraction works.
-    if len(skeleton.children) > 0:
-        anim_list = vmdl.base_lists.get(ModelDoc.AnimationList)
-        if anim_list is not None and not anim_list.default_root_bone_name:
-            anim_list.default_root_bone_name = skeleton.children[0].name
-
     bIsIncludeFile = False
     if qc_path.suffix == ".qci":
         bIsIncludeFile = True
@@ -970,9 +954,12 @@ def ImportQCtoVMDL(qc_path: Path):
         out_vmdl_prefab_path.write_text(vmdl_prefab.ToString())
         print('+ Saved prefab', out_vmdl_prefab_path.local)
 
-    if len(skeleton.children):
-        vmdl.root.add_nodes(skeleton)
-        
+    # NOTE: Skeleton is NOT exported — s&box generates it from SMD files.
+    # Including $definebone bones causes a duplicate skeleton with wrong orientation
+    # and no skinning data, conflicting with s&box's own SMD-derived skeleton.
+    # if len(skeleton.children):
+    #     vmdl.root.add_nodes(skeleton)
+
     out_vmdl_path.write_text(vmdl.ToString())
     print('+ Saved', out_vmdl_path.local)
 
