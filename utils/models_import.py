@@ -903,6 +903,14 @@ def ImportQCtoVMDL(qc_path: Path):
     # --- Post-process: assign LOD meshes to bodygroups ---
     _assign_lod_meshes_to_bodygroups(vmdl)
 
+    # --- Post-process: set default root bone for motion extraction ---
+    # s&box compiler auto-creates ExtractMotion with "pelvis" if this is empty.
+    # Set it to the actual root bone name so runtime motion extraction works.
+    if len(skeleton.children) > 0:
+        anim_list = vmdl.base_lists.get(ModelDoc.AnimationList)
+        if anim_list is not None and not anim_list.default_root_bone_name:
+            anim_list.default_root_bone_name = skeleton.children[0].name
+
     bIsIncludeFile = False
     if qc_path.suffix == ".qci":
         bIsIncludeFile = True
