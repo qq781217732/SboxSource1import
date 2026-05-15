@@ -284,7 +284,15 @@ def ImportQCtoVMDL(qc_path: Path):
     skeleton = ModelDoc.Skeleton()
     bHasDefaultWeightlist = False
 
-    bone_name_fixup = lambda name: name.replace('.', '_')
+    def bone_name_fixup(name: str) -> str:
+        """Convert Source 1 bone name to s&box standard naming.
+        'ValveBiped.Bip01_Pelvis' → 'bip01_pelvis'
+        'ValveBiped.HC_Body_Bone' → 'hc_body_bone'
+        """
+        fixed = name.replace('.', '_')
+        if fixed.startswith('ValveBiped_'):
+            fixed = fixed[len('ValveBiped_'):]
+        return fixed.lower()
 
     # --- first pass: collect $animation definitions ---
     animation_defs: dict[str, QC.animation] = {}
