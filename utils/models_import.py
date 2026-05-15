@@ -869,6 +869,26 @@ def ImportQCtoVMDL(qc_path: Path):
                     continue
                 found.add_nodes(bone)
         
+        # https://developer.valvesoftware.com/wiki/$hboxset / $hbox
+        elif isinstance(command, QC.hboxset):
+            command: QC.hboxset
+            current_hitbox_set = ModelDoc.HitboxSet(name=command.name)
+            vmdl.add_to_appropriate_list(current_hitbox_set)
+
+        elif isinstance(command, QC.hbox):
+            command: QC.hbox
+            bone_fixed = bone_name_fixup(command.bone)
+            hitbox = ModelDoc.Hitbox(
+                name=bone_fixed,
+                parent_bone=bone_fixed,
+                hitbox_mins=[command.minx, command.miny, command.minz],
+                hitbox_maxs=[command.maxx, command.maxy, command.maxz],
+            )
+            # Add to the most recently created HitboxSet
+            hitbox_list = vmdl.base_lists.get(ModelDoc.HitboxSetList)
+            if hitbox_list is not None and len(hitbox_list.children) > 0:
+                hitbox_list.children[-1].add_nodes(hitbox)
+
         # https://developer.valvesoftware.com/wiki/$bbox
         elif isinstance(command, (QC.bbox, QC.cbox)):
             command: Union[QC.bbox, QC.cbox]

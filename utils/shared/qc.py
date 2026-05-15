@@ -191,6 +191,20 @@ class QC:
         mesh_filename: str
         #options: _options
 
+    # https://developer.valvesoftware.com/wiki/$hboxset / $hbox
+    class hboxset:
+        name: str   # hitbox set name, usually "default"
+
+    class hbox:
+        group: int
+        bone: str
+        minx: float
+        miny: float
+        minz: float
+        maxx: float
+        maxy: float
+        maxz: float
+
     class keyvalues:
         def handle_options(self, options_node: Node):
             trav = QCBuilder.traverse_options(options_node)

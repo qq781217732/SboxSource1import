@@ -274,6 +274,25 @@ class ModelDoc:
     @containerof(PhysicsHullFile)
     class PhysicsShapeList(_BaseNode): pass
 
+    # --- Hitbox nodes ---
+    @dataclass
+    class Hitbox(_Node):
+        name: str = ""
+        parent_bone: str = ""
+        surface_property: str = ""
+        translation_only: bool = False
+        tags: str = ""
+        hitbox_mins: list[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
+        hitbox_maxs: list[float] = field(default_factory=lambda: [0.0, 0.0, 0.0])
+
+    @dataclass
+    class HitboxSet(_Node):
+        name: str = "default"
+        children: list = field(default_factory=list)
+
+    @containerof(HitboxSet)
+    class HitboxSetList(_BaseNode): pass
+
     @containerof(Attachment)
     class AttachmentList(_BaseNode): pass
 
