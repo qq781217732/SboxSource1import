@@ -669,7 +669,7 @@ def ImportQCtoVMDL(qc_path: Path):
             optionsiter = iter(command.options)
             for bone, weight in zip(optionsiter, optionsiter):
                 weightlist.weights.append(
-                    dict(bone=bone_name_fixup(bone), weight=weight)
+                    dict(bone=_sbox_bone_name(bone), weight=weight)
 )
             vmdl.add_to_appropriate_list(weightlist)
 
